@@ -3,13 +3,9 @@ package generator;
 import config.Config;
 import javafx.geometry.Point3D;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 
-public class SimpleGenerator implements IGenerator {
+public class RuntimeGenerator implements IGenerator {
 
     public static final Random RANDOM_X = new Random();
     public static final Random RANDOM_Y = new Random();
@@ -26,6 +22,8 @@ public class SimpleGenerator implements IGenerator {
     public static double START_Z = 1300.00;
     public static double END_Z   = 1399.99;
 
+    public List<Point3D> list = Collections.synchronizedList(new ArrayList<Point3D>());
+
     @Override
     public boolean make(boolean print) {
 
@@ -41,25 +39,16 @@ public class SimpleGenerator implements IGenerator {
         int generationQuantity = Config.VALUES.get("number_of_bees");
         int threadsNumber = Config.VALUES.get("number_of_threads");
 
-        StringBuffer grandBuilder = new StringBuffer();
         int alpha = generationQuantity / threadsNumber;
 
         for(int k = 0; k < threadsNumber; k++)
             threads.add(new Thread(new Runnable(){
 
-                StringBuffer builder = new StringBuffer();
-
                 @Override
                 public void run() {
 
                     for(int i = 0; i < alpha; i++)
-                        builder.append(String.format(Locale.US,
-                                "%f,%f,%f\n",
-                                newX(),
-                                newY(),
-                                newZ()));
-
-                    grandBuilder.append(builder.toString());
+                        list.add(new Point3D(newX(), newY(), newZ()));
 
                 }
 
@@ -76,15 +65,8 @@ public class SimpleGenerator implements IGenerator {
             e.printStackTrace();
         }
 
-        File file = new File(Config.OUTPUT.get("path"));
-
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write(grandBuilder.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         return false;
+
     }
 
     public double newX() {
@@ -100,6 +82,8 @@ public class SimpleGenerator implements IGenerator {
     }
 
     @Override
-    public List<Point3D> getBees() { return null; }
+    public List<Point3D> getBees() {
+        return list;
+    }
 
 }
